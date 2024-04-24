@@ -17,12 +17,6 @@ class MoudleIDTokenizer(object):
         with_padding: bool = False,
         max_track_length: int = -1,
     ):
-        super().__init__(
-            vocab_file,
-            min_hits_per_track=min_hits_per_track,
-            with_padding=with_padding,
-            max_track_length=max_track_length,
-        )
         self.vocab = load_vocab(vocab_file)
         self.inv_vocab = {v: k for k, v in self.vocab.items()}
 
