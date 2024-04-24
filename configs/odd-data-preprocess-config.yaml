@@ -1,0 +1,8 @@
+data_path: data/raw_parquets/v2
+output_prefix: data/odd-v2-padded-indexed
+vocab_file: data/odd-vocab.txt
+min_hits_per_track: 5
+with_padding: true
+max_track_length: 26 # including the beginning and end tokens.
+num_workers: 4
+max_evts: 4

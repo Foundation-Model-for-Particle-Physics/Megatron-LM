@@ -49,13 +49,13 @@ def build_tokenizer(args):
         assert args.vocab_file is not None
         tokenizer = BertModuleIDTokenizer(args.vocab_file,
                                           min_hits_per_track=args.min_hits_per_track,
-                                          with_padding=args.with_padding,
+                                          with_padding=args.pad_tracks,
                                           max_track_length=args.max_track_length)
     elif args.tokenizer_type == 'GPT2ModuleIDTokenizer':
         assert args.vocab_file is not None
         tokenizer = GPT2ModuleIDTokenizer(args.vocab_file,
                                           min_hits_per_track=args.min_hits_per_track,
-                                          with_padding=args.with_padding,
+                                          with_padding=args.pad_tracks,
                                           max_track_length=args.max_track_length)
     else:
         raise NotImplementedError('{} tokenizer is not '
