@@ -32,8 +32,7 @@ GPT_ARGS="
 DATA_ARGS="
     --data-path $DATA_PATH \
     --vocab-file $VOCAB_FILE \
-    --merge-file $MERGE_FILE \
-    --split 20,5,1
+    --split 90,5,5
 "
 
 OUTPUT_ARGS="

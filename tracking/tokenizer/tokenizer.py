@@ -32,7 +32,7 @@ class BertModuleIDTokenizer(MegatronTokenizer):
 
     @property
     def vocab_size(self):
-        return self.tokenizer.vocab_size()
+        return self.tokenizer.vocab_size
 
     @property
     def vocab(self):
@@ -113,7 +113,7 @@ class GPT2ModuleIDTokenizer(MegatronTokenizer):
 
     @property
     def vocab_size(self):
-        return self.tokenizer.vocab_size()
+        return self.tokenizer.vocab_size
 
     @property
     def vocab(self):
