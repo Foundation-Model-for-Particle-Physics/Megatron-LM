@@ -7,7 +7,8 @@ export CUDA_DEVICE_MAX_CONNECTIONS=1
 
 CHECKPOINT_PATH=run/results
 VOCAB_FILE=configs/odd-vocab.txt
-DATA_PATH=data/odd_v2_indexed
+DATA_PATH=data/odd-v2-padded-indexed
+TB_PATH=${CHECKPOINT_PATH}/tensorboard
 
 GPT_ARGS="
     --num-layers 24 \
@@ -16,7 +17,7 @@ GPT_ARGS="
     --seq-length 1024 \
     --max-position-embeddings 1024 \
     --micro-batch-size 4 \
-    --global-batch-size 8 \
+    --global-batch-size 128 \
     --lr 0.00015 \
     --train-iters 500000 \
     --lr-decay-iters 320000 \
@@ -32,14 +33,15 @@ GPT_ARGS="
 DATA_ARGS="
     --data-path $DATA_PATH \
     --vocab-file $VOCAB_FILE \
-    --split 90,5,5
+    --split 98,1,1
 "
 
 OUTPUT_ARGS="
     --log-interval 100 \
     --save-interval 10000 \
     --eval-interval 1000 \
-    --eval-iters 10
+    --eval-iters 10 \
+    --tensorboard-dir $TB_PATH
 "
 
 torchrun pretrain_gpt.py \

@@ -1,8 +1,8 @@
-data_path: data/raw_parquets/v2
+data_path: ../LLM4Tracking/data/raw_parquets/v2
 output_prefix: data/odd-v2-padded-indexed
-vocab_file: data/odd-vocab.txt
+vocab_file: configs/odd-vocab.txt
 min_hits_per_track: 5
 with_padding: true
-max_track_length: 26 # including the beginning and end tokens.
-num_workers: 4
-max_evts: 4
+max_track_length: 32 # including the beginning and end tokens. 26 is minimum for the current model.
+num_workers: 10
+max_evts: -1
