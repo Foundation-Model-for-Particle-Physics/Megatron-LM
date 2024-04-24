@@ -12,7 +12,7 @@ from functools import partial
 import numpy as np
 import torch
 import yaml
-from tracking.datamodule.odd_reader import ActsReader
+from tracking.datamodules.odd_reader import ActsReader
 from tracking.tokenizer.module_id import ModuleIDTokenizer
 from megatron.core.datasets.indexed_dataset import IndexedDatasetBuilder
 
