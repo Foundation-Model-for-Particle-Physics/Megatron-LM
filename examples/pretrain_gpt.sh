@@ -4,10 +4,11 @@
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
-CHECKPOINT_PATH=<Specify path>
-VOCAB_FILE=<Specify path to file>/gpt2-vocab.json
-MERGE_FILE=<Specify path to file>/gpt2-merges.txt
-DATA_PATH=<Specify path and file prefix>_text_document
+BASE_DIR=data
+CHECKPOINT_PATH=run/results
+VOCAB_FILE=$BASE_DIR/gpt2-vocab.json
+MERGE_FILE=$BASE_DIR/gpt2-merges.txt
+DATA_PATH=$BASE_DIR/my-gpt2_text_document
 
 GPT_ARGS="
     --num-layers 24 \
@@ -25,14 +26,15 @@ GPT_ARGS="
     --weight-decay 1e-2 \
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
-    --fp16
+	--attention-softmax-in-fp32 \
+    --fp16 
 "
 
 DATA_ARGS="
     --data-path $DATA_PATH \
     --vocab-file $VOCAB_FILE \
     --merge-file $MERGE_FILE \
-    --split 949,50,1
+    --split 20,5,1
 "
 
 OUTPUT_ARGS="
