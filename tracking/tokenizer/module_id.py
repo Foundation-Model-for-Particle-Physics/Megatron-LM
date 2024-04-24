@@ -16,6 +16,7 @@ class MoudleIDTokenizer(object):
         min_hits_per_track: int = 5,
         with_padding: bool = False,
         max_track_length: int = -1,
+        with_eod: bool = False,
     ):
         self.vocab = load_vocab(vocab_file)
         self.inv_vocab = {v: k for k, v in self.vocab.items()}
@@ -25,6 +26,7 @@ class MoudleIDTokenizer(object):
         self.unknown_id = self.vocab["[UNK]"]  # unknown token
         self.spacepoint_bos = -9900  # to indicate the beginning of a sequence of spacepoints
         self.spacepoint_eos = -9910
+        self.spacepoint_eod = -9920
         self.spacepoint_pad_number = -9999
 
         self._bos_token = "[BOS]"  # begin of sequence token
@@ -33,12 +35,16 @@ class MoudleIDTokenizer(object):
         self._eos_token = "[EOS]"  # end of sequence token
         self._eos_token_id = self.vocab.get(self._eos_token)
 
+        self._eod_token = "[EOD]"  # end of an event (i.e. document)
+        self.eod_token_id = self.vocab.get(self._eod_token)
+
         self._additional_special_tokens = []
         self.min_hits_per_track = min_hits_per_track
         self.with_padding = with_padding
         self.max_track_length = max_track_length
         if with_padding:
             assert self.max_track_length > 0, "Padding is enabled, but max_track_length is not set."
+        self.with_eod = with_eod
 
     @property
     def vocab_size(self):
@@ -91,13 +97,18 @@ class MoudleIDTokenizer(object):
         # flatten the list
         track = [item for sublist in tracks for item in sublist]
         track_hit_ids = [item for sublist in all_track_hit_ids for item in sublist]
+        if self.with_eod:
+            track.append(self.eod_token_id)
+            track_hit_ids.append(self.spacepoint_eod)
         return track, lengths, track_hit_ids
 
     def decode(self, ids):
+        """Convert token IDs to detector module IDs and special tokens."""
         tokens = convert_ids_to_tokens(ids)
         return " ".join(tokens)
 
     def decode_token_ids(self, token_ids):
+        """Convert token IDs to detector module IDs by excluding special tokens."""
         tokens = convert_ids_to_tokens(token_ids)
         exclude_list = ["[PAD]", "[CLS]", "[SEP]"]
         tokens = [token for token in tokens if token not in exclude_list]

@@ -6,6 +6,7 @@ from abc import ABC
 from abc import abstractmethod
 
 from megatron.core.datasets.megatron_tokenizer import MegatronTokenizer
+from tracking.tokenizer.tokenizer import BertModuleIDTokenizer, GPT2ModuleIDTokenizer
 
 from .bert_tokenization import FullTokenizer as FullBertTokenizer
 from .gpt2_tokenization import GPT2Tokenizer
@@ -44,6 +45,18 @@ def build_tokenizer(args):
     elif args.tokenizer_type == 'NullTokenizer':
         assert args.vocab_size is not None
         tokenizer = _NullTokenizer(args.vocab_size)
+    elif args.tokenizer_type == 'BertModuleIDTokenizer':
+        assert args.vocab_file is not None
+        tokenizer = BertModuleIDTokenizer(args.vocab_file,
+                                          min_hits_per_track=args.min_hits_per_track,
+                                          with_padding=args.with_padding,
+                                          max_track_length=args.max_track_length)
+    elif args.tokenizer_type == 'GPT2ModuleIDTokenizer':
+        assert args.vocab_file is not None
+        tokenizer = GPT2ModuleIDTokenizer(args.vocab_file,
+                                          min_hits_per_track=args.min_hits_per_track,
+                                          with_padding=args.with_padding,
+                                          max_track_length=args.max_track_length)
     else:
         raise NotImplementedError('{} tokenizer is not '
                                   'implemented.'.format(args.tokenizer_type))
