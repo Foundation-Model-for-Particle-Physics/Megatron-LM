@@ -4,11 +4,10 @@
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
-BASE_DIR=data
+
 CHECKPOINT_PATH=run/results
-VOCAB_FILE=$BASE_DIR/gpt2-vocab.json
-MERGE_FILE=$BASE_DIR/gpt2-merges.txt
-DATA_PATH=$BASE_DIR/my-gpt2_text_document
+VOCAB_FILE=configs/odd-vocab.txt
+DATA_PATH=data/odd_v2_indexed
 
 GPT_ARGS="
     --num-layers 24 \
@@ -27,7 +26,7 @@ GPT_ARGS="
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
 	--attention-softmax-in-fp32 \
-    --fp16 
+    --fp16
 "
 
 DATA_ARGS="

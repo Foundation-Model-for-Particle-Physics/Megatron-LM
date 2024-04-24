@@ -7,7 +7,7 @@ import pandas as pd
 from .help_tokenizer import convert_ids_to_tokens, load_vocab
 
 
-class MoudleIDTokenizer(object):
+class ModuleIDTokenizer(object):
     """Tokenizer for tracking data for BERT-style models."""
 
     def __init__(

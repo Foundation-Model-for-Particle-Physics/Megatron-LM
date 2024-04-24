@@ -106,7 +106,7 @@ class GPT2ModuleIDTokenizer(MegatronTokenizer):
     def __init__(self, vocab_file: str, min_hits_per_track: int = 5, with_padding: bool = False, max_track_length: int = -1):
         super().__init__(vocab_file)
         self.tokenizer = ModuleIDTokenizer(
-            vocab_file, min_hits_per_track, 
+            vocab_file, min_hits_per_track,
             with_padding, max_track_length, with_eod=True)
 
         self.eod_id = self.tokenizer.vocab["[EOD]"]
@@ -131,4 +131,4 @@ class GPT2ModuleIDTokenizer(MegatronTokenizer):
 
     @property
     def eod(self):
-        return self.eod_id  
+        return self.eod_id
