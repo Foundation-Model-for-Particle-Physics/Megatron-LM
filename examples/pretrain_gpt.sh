@@ -4,10 +4,11 @@
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
-CHECKPOINT_PATH=<Specify path>
-VOCAB_FILE=<Specify path to file>/gpt2-vocab.json
-MERGE_FILE=<Specify path to file>/gpt2-merges.txt
-DATA_PATH=<Specify path and file prefix>_text_document
+
+CHECKPOINT_PATH=run/results
+VOCAB_FILE=configs/odd-vocab.txt
+DATA_PATH=data/odd-v2-padded-indexed
+TB_PATH=${CHECKPOINT_PATH}/tensorboard
 
 GPT_ARGS="
     --num-layers 24 \
@@ -16,7 +17,7 @@ GPT_ARGS="
     --seq-length 1024 \
     --max-position-embeddings 1024 \
     --micro-batch-size 4 \
-    --global-batch-size 8 \
+    --global-batch-size 128 \
     --lr 0.00015 \
     --train-iters 500000 \
     --lr-decay-iters 320000 \
@@ -25,21 +26,22 @@ GPT_ARGS="
     --weight-decay 1e-2 \
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
+	--attention-softmax-in-fp32 \
     --fp16
 "
 
 DATA_ARGS="
     --data-path $DATA_PATH \
     --vocab-file $VOCAB_FILE \
-    --merge-file $MERGE_FILE \
-    --split 949,50,1
+    --split 98,1,1
 "
 
 OUTPUT_ARGS="
     --log-interval 100 \
     --save-interval 10000 \
     --eval-interval 1000 \
-    --eval-iters 10
+    --eval-iters 10 \
+    --tensorboard-dir $TB_PATH
 "
 
 torchrun pretrain_gpt.py \
