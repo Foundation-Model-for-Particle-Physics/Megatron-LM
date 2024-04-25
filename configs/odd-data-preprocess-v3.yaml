@@ -1,0 +1,8 @@
+data_path: /workspace/data/raw_parquets/v3
+output_prefix: data/odd-v3-padded-indexed
+vocab_file: configs/odd-vocab.txt
+min_hits_per_track: 5
+with_padding: true
+max_track_length: 32 # including the beginning and end tokens. 26 is minimum for the current model.
+num_workers: 16
+max_evts: -1
