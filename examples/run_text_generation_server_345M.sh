@@ -6,13 +6,13 @@ DISTRIBUTED_ARGS="--nproc_per_node 1 \
                   --master_addr localhost \
                   --master_port 6000"
 
-CHECKPOINT=<Path to checkpoint (e.g /345m)>
-VOCAB_FILE=<Path to vocab.json (e.g. /gpt2-vocab.json)>
-MERGE_FILE=<Path to merges.txt (e.g. /gpt2-merges.txt)>
+CHECKPOINT=run/gpt2-345m-odd-v2-padded-indexed
+VOCAB_FILE=configs/odd-vocab.txt
+# MERGE_FILE=<Path to merges.txt (e.g. /gpt2-merges.txt)>
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
-pip install flask-restful
+# pip install flask-restful
 
 torchrun $DISTRIBUTED_ARGS tools/run_text_generation_server.py   \
        --tensor-model-parallel-size 1  \
@@ -22,10 +22,10 @@ torchrun $DISTRIBUTED_ARGS tools/run_text_generation_server.py   \
        --load ${CHECKPOINT}  \
        --num-attention-heads 16  \
        --max-position-embeddings 1024  \
-       --tokenizer-type GPT2BPETokenizer  \
+       --tokenizer-type GPT2ModuleIDTokenizer  \
        --fp16  \
        --micro-batch-size 1  \
        --seq-length 1024  \
        --vocab-file $VOCAB_FILE  \
-       --merge-file $MERGE_FILE  \
-       --seed 42
+       --seed 42 \
+       --attention-softmax-in-fp32

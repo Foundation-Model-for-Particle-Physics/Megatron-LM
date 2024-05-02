@@ -12,9 +12,11 @@ from functools import partial
 import numpy as np
 import torch
 import yaml
+from tqdm import tqdm
+
+from megatron.core.datasets.indexed_dataset import IndexedDatasetBuilder
 from tracking.datamodules.odd_reader import ActsReader
 from tracking.tokenizer.module_id import ModuleIDTokenizer
-from megatron.core.datasets.indexed_dataset import IndexedDatasetBuilder
 
 logging.basicConfig(
     filename="create_data.log",
@@ -76,31 +78,39 @@ def preprocess_tracking_data(config: TrackingDataConfig):
     end_evt = reader.nevts if config.max_evts < 0 else config.max_evts
 
     # process all events with multiprocessing
-    all_track_ids = []
+    track_id_file = open(f"{config.output_prefix}.track_ids.bin", "wb")
     num_tracks_per_evt = []
     if config.num_workers > 1:
         process_one_event_fn = partial(process_one_event, reader=reader, tokenizer=tokenizer)
+
         with concurrent.futures.ProcessPoolExecutor(max_workers=config.num_workers) as executor:
-            for tracks, lengths, track_ids, num_tracks in executor.map(
-                process_one_event_fn, range(end_evt)
+            futures = [executor.submit(process_one_event_fn, evt_idx) for evt_idx in range(end_evt)]
+
+            for future in tqdm(
+                concurrent.futures.as_completed(futures), total=end_evt, desc="Processing events"
             ):
+                tracks, lengths, track_ids, num_tracks = future.result()
                 track_tensor = torch.tensor(tracks, dtype=torch.int16)
                 builder.add_document(track_tensor, lengths)
-                all_track_ids.append(track_ids)
+
+                track_ids_np = np.array(track_ids, dtype=np.int64)
+                track_id_file.write(track_ids_np.tobytes(order="C"))
+
                 num_tracks_per_evt.append(num_tracks)
     else:
-        for evt_idx in range(end_evt):
+        for evt_idx in tqdm(range(end_evt), desc="Processing events", total=end_evt):
             tracks, lengths, track_ids, num_tracks = process_one_event(evt_idx)
             tracks = torch.tensor(tracks, dtype=torch.int16)
             builder.add_document(tracks, lengths)
-            all_track_ids.append(track_ids)
+
+            track_ids_np = np.array(track_ids, dtype=np.int64)
+            track_id_file.write(track_ids_np.tobytes(order="C"))
+
             num_tracks_per_evt.append(num_tracks)
 
     builder.finalize(f"{config.output_prefix}.idx")
+    track_id_file.close()
     logger.info(f"Preprocessed data saved to {config.output_prefix}.bin")
-    all_track_ids = [item for sublist in all_track_ids for item in sublist]
-    with open(f"{config.output_prefix}.track_ids.bin", "wb") as f:
-        f.write(np.array(all_track_ids, dtype=np.int64).tobytes(order="C"))
 
     with open(f"{config.output_prefix}.num_tracks.bin", "wb") as f:
         f.write(np.array(num_tracks_per_evt, dtype=np.int16).tobytes(order="C"))

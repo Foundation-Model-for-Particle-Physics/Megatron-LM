@@ -1,22 +1,52 @@
 #!/bin/bash
+#SBATCH -A m3443
+#SBATCH -C gpu
+#SBATCH -q regular
+#SBATCH --exclusive
+#SBATCH --gpu-bind=none
+#SBATCH -L scratch,cfs
+#SBATCH -o logs/%x-%j.out
+#SBATCH --mail-type=ALL
+#SBATCH --time=0:30:00
+#SBATCH --gpus-per-task=1
+#SBATCH --ntasks-per-node=4
+#SBATCH -N 256
+#SBATCH -J odd_gpt3
 
+DIR="/global/homes/x/xju/scratch/LLMTracking/Megatron-LM"
+DATETIME=`date +'date_%y-%m-%d_time_%H-%M-%S'`
+mkdir -p $DIR/logs
 
 #SBATCH <SLURM OPTIONS> --nodes=128 --exclusive --ntasks-per-node=8 --job-name=megatron_gpt3_175b
 
 
-DIR=`pwd`
-DATETIME=`date +'date_%y-%m-%d_time_%H-%M-%S'`
-mkdir -p $DIR/logs
+DATASET_1="data/odd-v2-padded-indexed"
+DATASET_2="data/odd-v3-padded-indexed"
+# DATASET="0.5 ${DATASET_1} 0.5 ${DATASET_2}"
+DATASET=$DATASET_2
 
+CHECKPOINT_PATH=run/gpt3-175B-odd-padded
+TB_PATH=${CHECKPOINT_PATH}/tensorboard
+VOCAB_FILE=configs/odd-vocab.txt
 
-DATASET_1="<PATH TO THE FIRST DATASET>"
-DATASET_2="<PATH TO THE SECOND DATASET>"
-DATASET_3="<PATH TO THE THIRD DATASET>"
-DATASET="0.2 ${DATASET_1} 0.3 ${DATASET_2} 0.5 ${DATASET_3}"
+# distributed training options
+GPUS_PER_NODE=4
+MASTER_ADDR=localhost
+MASTER_PORT=6000
+NODE_RANK=0
+NNODES=${SLURM_JOB_NUM_NODES}
+WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
+DISTRIBUTED_ARGS="
+    --nproc-per-node $GPUS_PER_NODE \
+    --nnodes $NNODES \
+    --node-rank $NODE_RANK \
+    --master-addr $MASTER_ADDR \
+    --master-port $MASTER_PORT
+"
 
 options=" \
-	--tensor-model-parallel-size 8 \
+	--tensor-model-parallel-size 4 \
 	--pipeline-model-parallel-size 16 \
         --num-layers 96 \
         --hidden-size 12288 \
@@ -36,29 +66,37 @@ options=" \
         --eval-iters 40 \
         --eval-interval 1000 \
 	--data-path ${DATASET} \
-	--vocab-file <PATH TO gpt-vocab.json> \
-	--merge-file <PATH TO gpt-merges.txt> \
-	--save-interval 1000 \
-	--save <PATH TO CHECKPOINTS DIRECTORY> \
-	--load <PATH TO CHECKPOINTS DIRECTORY> \
-	--split 98,2,0 \
+	--vocab-file $VOCAB_FILE \
+	--save-interval 100 \
+	--save $CHECKPOINT_PATH \
+	--load $CHECKPOINT_PATH \
+	--split 98,1,1 \
 	--clip-grad 1.0 \
 	--weight-decay 0.1 \
 	--adam-beta1 0.9 \
 	--adam-beta2 0.95 \
 	--init-method-std 0.006 \
-	--tensorboard-dir <TENSORBOARD DIRECTORY> \
+	--tensorboard-dir $TB_PATH \
+	--attention-softmax-in-fp32 \
+	--distributed-backend nccl \
 	--fp16 "
 
 
-run_cmd="python -u ${DIR}/pretrain_gpt.py $@ ${options}"
+# run_cmd="python -u ${DIR}/pretrain_gpt.py $@ ${options}"
 
 
-srun -l \
-     --container-image "nvcr.io/nvidia/pytorch:20.12-py3" \
-     --container-mounts "<DIRECTORIES TO MOUNT>" \
-     --output=$DIR/logs/%x_%j_$DATETIME.log sh -c "${run_cmd}"
+# srun -l \
+#      --container-image "nvcr.io/nvidia/pytorch:20.12-py3" \
+#      --container-mounts "<DIRECTORIES TO MOUNT>" \
+#      --output=$DIR/logs/%x_%j_$DATETIME.log sh -c "${run_cmd}"
 
+
+run_cmd="export CUDA_DEVICE_MAX_CONNECTIONS=1 && torchrun ${DISTRIBUTED_ARGS} python -u pretrain_gpt.py $@ ${options} "
+
+podman-hpc run -it --shm-size=2g --rm --gpu \
+  -v /pscratch/sd/x/xju/LLMTracking/Megatron-LM:/workspace/Megatron-LM \
+  -w /workspace/Megatron-LM \
+  -v /global/cfs/cdirs/m3443/data/ODD:/workspace/data nvcr.io/nvidia/pytorch:24.03-py3 bash \
+  -c "${run_cmd}"
 
 set +x
-
