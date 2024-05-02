@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -A m3443
-#SBATCH -C gpu&hbm80g
+#SBATCH -C gpu
 #SBATCH -q regular
 #SBATCH --exclusive
 #SBATCH --gpu-bind=none
@@ -12,9 +12,6 @@
 #SBATCH --ntasks-per-node=4
 #SBATCH -N 256
 #SBATCH -J odd_gpt3
-
-
-
 
 DIR="/global/homes/x/xju/scratch/LLMTracking/Megatron-LM"
 DATETIME=`date +'date_%y-%m-%d_time_%H-%M-%S'`
@@ -31,6 +28,22 @@ DATASET=$DATASET_2
 CHECKPOINT_PATH=run/gpt3-175B-odd-padded
 TB_PATH=${CHECKPOINT_PATH}/tensorboard
 VOCAB_FILE=configs/odd-vocab.txt
+
+# distributed training options
+GPUS_PER_NODE=4
+MASTER_ADDR=localhost
+MASTER_PORT=6000
+NODE_RANK=0
+NNODES=${SLURM_JOB_NUM_NODES}
+WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
+
+DISTRIBUTED_ARGS="
+    --nproc-per-node $GPUS_PER_NODE \
+    --nnodes $NNODES \
+    --node-rank $NODE_RANK \
+    --master-addr $MASTER_ADDR \
+    --master-port $MASTER_PORT
+"
 
 options=" \
 	--tensor-model-parallel-size 4 \
@@ -65,6 +78,7 @@ options=" \
 	--init-method-std 0.006 \
 	--tensorboard-dir $TB_PATH \
 	--attention-softmax-in-fp32 \
+	--distributed-backend nccl \
 	--fp16 "
 
 
@@ -77,7 +91,7 @@ options=" \
 #      --output=$DIR/logs/%x_%j_$DATETIME.log sh -c "${run_cmd}"
 
 
-run_cmd="python -u pretrain_gpt.py $@ ${options}"
+run_cmd="export CUDA_DEVICE_MAX_CONNECTIONS=1 && torchrun ${DISTRIBUTED_ARGS} python -u pretrain_gpt.py $@ ${options} "
 
 podman-hpc run -it --shm-size=2g --rm --gpu \
   -v /pscratch/sd/x/xju/LLMTracking/Megatron-LM:/workspace/Megatron-LM \

@@ -5,7 +5,7 @@
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
 
-CHECKPOINT_PATH=run/results
+CHECKPOINT_PATH=run/gpt2-345m-odd-v2-padded-indexed
 VOCAB_FILE=configs/odd-vocab.txt
 DATA_PATH=data/odd-v2-padded-indexed
 TB_PATH=${CHECKPOINT_PATH}/tensorboard
@@ -17,7 +17,7 @@ GPT_ARGS="
     --seq-length 1024 \
     --max-position-embeddings 1024 \
     --micro-batch-size 4 \
-    --global-batch-size 128 \
+    --global-batch-size 8 \
     --lr 0.00015 \
     --train-iters 500000 \
     --lr-decay-iters 320000 \
@@ -38,8 +38,8 @@ DATA_ARGS="
 
 OUTPUT_ARGS="
     --log-interval 100 \
-    --save-interval 10000 \
-    --eval-interval 1000 \
+    --save-interval 1000 \
+    --eval-interval 10 \
     --eval-iters 10 \
     --tensorboard-dir $TB_PATH
 "
